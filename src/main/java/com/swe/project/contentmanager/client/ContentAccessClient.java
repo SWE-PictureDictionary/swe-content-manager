@@ -29,12 +29,12 @@ public class ContentAccessClient {
 
     public ResponseEntity<String> getAllTopics() {
         String url = contentAccessUrl + "/topics";
-        return restTemplate.exchange(url, HttpMethod.GET, null, String.class);
+        return cleanStringResponse(restTemplate.exchange(url, HttpMethod.GET, null, String.class));
     }
 
     public ResponseEntity<String> getTopic(String id) {
         String url = contentAccessUrl + "/topics/" + id;
-        return restTemplate.exchange(url, HttpMethod.GET, null, String.class);
+        return cleanStringResponse(restTemplate.exchange(url, HttpMethod.GET, null, String.class));
     }
 
     public ResponseEntity<String> createTopic(CreateTopicRequest request) {
@@ -44,7 +44,7 @@ public class ContentAccessClient {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         HttpEntity<CreateTopicRequest> entity = new HttpEntity<>(request, headers);
-        return restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+        return cleanStringResponse(restTemplate.exchange(url, HttpMethod.POST, entity, String.class));
     }
 
     public ResponseEntity<String> addHotspot(String id, HotspotRequest request) {
@@ -54,7 +54,7 @@ public class ContentAccessClient {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         HttpEntity<HotspotRequest> entity = new HttpEntity<>(request, headers);
-        return restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+        return cleanStringResponse(restTemplate.exchange(url, HttpMethod.POST, entity, String.class));
     }
 
     public ResponseEntity<String> updateHotspot(String id, String label, HotspotRequest request) {
@@ -65,17 +65,17 @@ public class ContentAccessClient {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         HttpEntity<HotspotRequest> entity = new HttpEntity<>(request, headers);
-        return restTemplate.exchange(url, HttpMethod.PUT, entity, String.class);
+        return cleanStringResponse(restTemplate.exchange(url, HttpMethod.PUT, entity, String.class));
     }
 
     public ResponseEntity<String> deleteHotspot(String id, int index) {
         String url = contentAccessUrl + "/topics/" + id + "/hotspots/" + index;
-        return restTemplate.exchange(url, HttpMethod.DELETE, null, String.class);
+        return cleanStringResponse(restTemplate.exchange(url, HttpMethod.DELETE, null, String.class));
     }
 
     public ResponseEntity<String> deleteTopic(String id) {
         String url = contentAccessUrl + "/topics/" + id;
-        return restTemplate.exchange(url, HttpMethod.DELETE, null, String.class);
+        return cleanStringResponse(restTemplate.exchange(url, HttpMethod.DELETE, null, String.class));
     }
 
     public ResponseEntity<String> uploadImage(String id, MultipartFile file) {
@@ -91,13 +91,13 @@ public class ContentAccessClient {
     public ResponseEntity<byte[]> getImage(String filename) {
         String encodedFilename = UriUtils.encodePathSegment(filename, StandardCharsets.UTF_8);
         String url = contentAccessUrl + "/topics/media/images/" + encodedFilename;
-        return restTemplate.exchange(url, HttpMethod.GET, null, byte[].class);
+        return cleanByteResponse(restTemplate.exchange(url, HttpMethod.GET, null, byte[].class));
     }
 
     public ResponseEntity<byte[]> getAudio(String filename) {
         String encodedFilename = UriUtils.encodePathSegment(filename, StandardCharsets.UTF_8);
         String url = contentAccessUrl + "/topics/media/audio/" + encodedFilename;
-        return restTemplate.exchange(url, HttpMethod.GET, null, byte[].class);
+        return cleanByteResponse(restTemplate.exchange(url, HttpMethod.GET, null, byte[].class));
     }
 
     private ResponseEntity<String> uploadMultipart(String url, MultipartFile file) {
@@ -118,6 +118,32 @@ public class ContentAccessClient {
         }
 
         HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-        return restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+        return cleanStringResponse(restTemplate.exchange(url, HttpMethod.POST, entity, String.class));
+    }
+
+    private ResponseEntity<String> cleanStringResponse(ResponseEntity<String> response) {
+        HttpHeaders headers = new HttpHeaders();
+        MediaType contentType = response.getHeaders().getContentType();
+
+        if (contentType != null) {
+            headers.setContentType(contentType);
+        } else {
+            headers.setContentType(MediaType.APPLICATION_JSON);
+        }
+
+        return new ResponseEntity<>(response.getBody(), headers, response.getStatusCode());
+    }
+
+    private ResponseEntity<byte[]> cleanByteResponse(ResponseEntity<byte[]> response) {
+        HttpHeaders headers = new HttpHeaders();
+        MediaType contentType = response.getHeaders().getContentType();
+
+        if (contentType != null) {
+            headers.setContentType(contentType);
+        } else {
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        }
+
+        return new ResponseEntity<>(response.getBody(), headers, response.getStatusCode());
     }
 }
